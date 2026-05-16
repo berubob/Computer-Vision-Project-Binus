@@ -1,0 +1,6 @@
+venv_cv_potholes/
+   *.zip
+   *.tar
+   datasets/
+   __pycache__/
+*.zip
