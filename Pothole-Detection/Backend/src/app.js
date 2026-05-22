@@ -1,15 +1,17 @@
 const express = require('express');
 const path = require('path');
+const detectRoutes = require('./routes/detectRoutes');
+
 const app = express();
 
+// Middleware
 app.use(express.json());
 
-// Serve folder outputs agar frontend bisa akses file hasil
+// Static file serving
 app.use('/outputs', express.static(path.join(__dirname, 'outputs')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-const detectRoutes = require('./routes/detectRoutes');
 app.use('/api/detect', detectRoutes);
 
 module.exports = app;
