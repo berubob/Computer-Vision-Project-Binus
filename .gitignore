@@ -19,3 +19,5 @@ runs/
 Thumbs.db
 
 .ipynb_checkpoints/
+
+labels/
