@@ -24,7 +24,7 @@ const WorkflowSection: React.FC = () => {
     <div className="text-center space-y-12">
       <div className="space-y-2">
         <h2 className="text-2xl sm:text-3xl font-bold">Inspection Workflow</h2>
-        <p className="text-gray-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
+        <p className="text-gray-400 text-xs sm:text-sm w-full leading-relaxed text-center">
           Our proprietary detection engine uses multi-stage neural networks to process infrastructure visuals in seconds.
         </p>
       </div>

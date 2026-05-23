@@ -10,7 +10,7 @@ const FeaturesGrid: React.FC = () => {
             Real-time Telemetry
           </span>
           <h3 className="text-xl font-bold">Precision Mapping & Localization</h3>
-          <p className="text-gray-400 text-xs max-w-md leading-relaxed">
+          <p className="text-gray-400 text-xs w-full leading-relaxed text-center">
             Every detected defect is automatically pinned to a global map with sub-meter accuracy using integrated GPS metadata and visual odometry.
           </p>
         </div>

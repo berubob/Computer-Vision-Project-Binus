@@ -10,7 +10,19 @@ interface DefectSummary {
   color: string;
 }
 
-const ReportDashboard: React.FC = () => {
+interface Props {
+  result: {
+    id: string;
+    status: string;
+    tipe: string;
+    kondisi_jalan: string;
+    output_file: string;
+  };
+  onBack: () => void;
+}
+
+// Ubah signature component:
+const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
   const defectData: DefectSummary[] = [
     { type: 'Longitudinal Cracks', count: 7, percentage: 50, color: 'bg-amber-500' },
     { type: 'Severe Potholes', count: 4, percentage: 28, color: 'bg-red-500' },
@@ -37,6 +49,11 @@ const ReportDashboard: React.FC = () => {
           </button>
           <button className="bg-amber-500 hover:bg-amber-600 text-black text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
             🔄 Recalibrate AI
+          </button>
+          <button
+            onClick={onBack}
+            className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
+            ← Kembali
           </button>
         </div>
       </div>
@@ -98,10 +115,6 @@ const ReportDashboard: React.FC = () => {
               ))}
             </div>
           </div>
-
-          <p className="text-[11px] text-amber-500/80 bg-amber-500/5 border border-amber-500/10 p-3 rounded-xl mt-6">
-            💡 <strong>Analisis AI:</strong> Retak longitudinal mendominasi sebesar 50%. Ini mengindikasikan adanya kelelahan struktural (fatigue) pada lapisan base pondasi jalan.
-          </p>
         </div>
 
         {/* Kanan: Tabel Rincian Data */}
