@@ -1,0 +1,6 @@
+names:
+- pothole
+nc: 1
+test: d:\Albert\Binus\Kuliah Semester 4\Computer Vision\Computer-Vision-Project-Binus\Pothole.v1i.yolov8\test\images
+train: d:\Albert\Binus\Kuliah Semester 4\Computer Vision\Computer-Vision-Project-Binus\Pothole.v1i.yolov8\train\images
+val: d:\Albert\Binus\Kuliah Semester 4\Computer Vision\Computer-Vision-Project-Binus\Pothole.v1i.yolov8\valid\images
