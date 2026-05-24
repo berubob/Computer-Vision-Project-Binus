@@ -1,5 +1,7 @@
 import React from 'react';
 import type { DetectResult } from './services/detectService';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Props {
   result: DetectResult;
@@ -140,9 +142,34 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
   const pciLabel = getPCILabel(pciScore);
   const confidencePct = Math.round((result.confidence ?? 0) * 100);
   const imageUrl = result.output_file ? `http://localhost:3000${result.output_file}` : null;
+  const reportRef = React.useRef<HTMLDivElement>(null);
+
+  const handleExportPDF = async () => {
+    const element = reportRef.current;
+    if (!element) return;
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: '#0d111a',
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`report-${result.id.slice(0, 8)}.pdf`);
+  };
 
   return (
-    <div className="min-h-screen bg-[#0d111a] text-white p-6 font-sans">
+    <div ref={reportRef} className="min-h-screen bg-[#0d111a] text-white p-6 font-sans">
 
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 mb-8 gap-4">
@@ -175,7 +202,9 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
 
         {/* Action Buttons */}
         <div className="flex gap-3 flex-wrap">
-          <button className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
+          <button
+            onClick={handleExportPDF}
+            className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
             📁 Export PDF
           </button>
           <button
@@ -225,10 +254,7 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
               <span className="text-gray-500 text-xs">Confidence</span>
               <div className="flex items-center gap-2">
                 <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-full"
-                    style={{ width: `${confidencePct}%` }}
-                  />
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${confidencePct}%` }} />
                 </div>
                 <span className="text-amber-400 text-xs font-semibold">{confidencePct}%</span>
               </div>
@@ -237,6 +263,69 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-500 text-xs">Total Deteksi</span>
                 <span className="text-white text-xs font-semibold">{result.total_deteksi} titik</span>
+              </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-800" />
+
+          {/* Maintenance Priority */}
+          <div className="flex flex-col gap-3">
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Maintenance Priority</p>
+
+            {[
+              {
+                show: result.kondisi_jalan === 'rusak_berat',
+                icon: '🚨',
+                priority: 'Critical',
+                textColor: 'text-red-400',
+                borderColor: 'border-l-red-500',
+                desc: 'Immediate reconstruction within 7 days.',
+              },
+              {
+                show: result.kondisi_jalan === 'rusak_ringan',
+                icon: '⚠️',
+                priority: 'High',
+                textColor: 'text-orange-400',
+                borderColor: 'border-l-orange-500',
+                desc: 'Schedule patching within 30 days.',
+              },
+              {
+                show: result.kondisi_jalan === 'sedang',
+                icon: '🔶',
+                priority: 'Medium',
+                textColor: 'text-yellow-400',
+                borderColor: 'border-l-yellow-500',
+                desc: 'Preventive maintenance within 90 days.',
+              },
+              {
+                show: result.kondisi_jalan === 'baik',
+                icon: '✅',
+                priority: 'Low',
+                textColor: 'text-emerald-400',
+                borderColor: 'border-l-emerald-500',
+                desc: 'Routine inspection in 6 months.',
+              },
+            ]
+              .filter(item => item.show)
+              .map((item, idx) => (
+                <div key={idx} className={`flex items-start gap-3 p-3 rounded-lg bg-[#0d111a] border-l-2 ${item.borderColor}`}>
+                  <span className="text-base">{item.icon}</span>
+                  <div>
+                    <p className={`text-xs font-bold ${item.textColor}`}>{item.priority}</p>
+                    <p className="text-gray-500 text-[11px] leading-relaxed mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+
+            {(result.confidence ?? 0) < 0.5 && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d111a] border-l-2 border-l-blue-500">
+                <span className="text-base">🔍</span>
+                <div>
+                  <p className="text-xs font-bold text-blue-400">Verify</p>
+                  <p className="text-gray-500 text-[11px] leading-relaxed mt-0.5">Low confidence. Manual inspection recommended.</p>
+                </div>
               </div>
             )}
           </div>
@@ -297,15 +386,7 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
                 <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: `${pciScore}%` }} />
               </div>
             </div>
-          </div>
-
-          <p className="text-[11px] text-amber-500/80 bg-amber-500/5 border border-amber-500/10 p-3 rounded-xl mt-6">
-            💡 <strong>Analisis AI:</strong> Terdeteksi {result.tipe === 'lubang'
-              ? 'kerusakan tipe lubang (pothole)'
-              : result.tipe === 'retak'
-              ? 'retak pada permukaan jalan'
-              : 'permukaan jalan dalam kondisi baik'} dengan keyakinan {confidencePct}%.
-          </p>
+          </div>  
         </div>
       </div>
     </div>
