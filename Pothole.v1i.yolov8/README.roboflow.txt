@@ -1,8 +1,8 @@
 
-Pothole Detection  - v7 2023-07-13 2:00pm
+Pothole - v1 2024-02-20 5:25pm
 ==============================
 
-This dataset was exported via roboflow.com on July 13, 2023 at 8:33 AM GMT
+This dataset was exported via roboflow.com on February 20, 2024 at 10:28 AM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects
@@ -17,14 +17,13 @@ visit https://github.com/roboflow/notebooks
 
 To find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com
 
-The dataset includes 3813 images.
-Potholes are annotated in YOLOv8 format.
+The dataset includes 2771 images.
+Pothole are annotated in YOLOv8 format.
 
 The following pre-processing was applied to each image:
 * Auto-orientation of pixel data (with EXIF-orientation stripping)
 * Resize to 640x640 (Stretch)
 
-The following augmentation was applied to create 3 versions of each source image:
-* 50% probability of horizontal flip
+No image augmentation techniques were applied.
 
 
