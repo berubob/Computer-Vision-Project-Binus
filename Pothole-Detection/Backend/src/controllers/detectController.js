@@ -1,73 +1,140 @@
-const { v4: uuidv4 } = require('uuid');
+const ort = require('onnxruntime-node');
+const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
-// Pastikan folder outputs ada
 const outputDir = path.join(__dirname, '../outputs');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-// ─── Mock AI Model ────────────────────────────────────────────────────────────
-// TODO: Ganti fungsi ini dengan integrasi model AI nyata (Python/YOLO/dll)
-function runMockAIModel(filePath, type) {
-  const tipeOptions = ['retak', 'lubang', 'permukaan_baik'];
-  const kondisiOptions = ['baik', 'sedang', 'rusak_ringan', 'rusak_berat'];
+const MODEL_PATH = path.join(__dirname, '../../models/pothole_model.onnx');
+let sessionPromise = ort.InferenceSession.create(MODEL_PATH);
+
+// ─── Preprocessing ────────────────────────────────────────────────────────────
+async function preprocessImage(filePath) {
+  const { data } = await sharp(filePath)
+    .resize(640, 640)
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  // Convert HWC → CHW (YOLO butuh format channel-first)
+  const float32 = new Float32Array(3 * 640 * 640);
+  for (let i = 0; i < 640 * 640; i++) {
+    float32[0 * 640 * 640 + i] = data[i * 3 + 0] / 255.0; // R
+    float32[1 * 640 * 640 + i] = data[i * 3 + 1] / 255.0; // G
+    float32[2 * 640 * 640 + i] = data[i * 3 + 2] / 255.0; // B
+  }
+
+  return new ort.Tensor('float32', float32, [1, 3, 640, 640]);
+}
+
+// ─── Interpretasi Output [1, 5, 8400] ────────────────────────────────────────
+function interpretOutput(outputData, confThreshold = 0.25) {
+  // outputData flat array panjang 42000
+  // Struktur: [x(8400), y(8400), w(8400), h(8400), conf(8400)]
+  const numBoxes = 8400;
+
+  let bestConf = 0;
+  let bestBox = null;
+  let detectedBoxes = 0;
+
+  for (let i = 0; i < numBoxes; i++) {
+    const conf = outputData[4 * numBoxes + i]; // confidence ada di row ke-4
+
+    if (conf > confThreshold) {
+      detectedBoxes++;
+      if (conf > bestConf) {
+        bestConf = conf;
+        bestBox = {
+          x: outputData[0 * numBoxes + i],
+          y: outputData[1 * numBoxes + i],
+          w: outputData[2 * numBoxes + i],
+          h: outputData[3 * numBoxes + i],
+          confidence: conf,
+        };
+      }
+    }
+  }
+
+  // Tentukan kondisi jalan berdasarkan jumlah & confidence deteksi
+  let tipe, kondisi_jalan;
+
+  if (!bestBox) {
+    // Tidak ada pothole terdeteksi
+    tipe = 'permukaan_baik';
+    kondisi_jalan = 'baik';
+  } else if (detectedBoxes >= 5 || bestConf > 0.8) {
+    tipe = 'lubang';
+    kondisi_jalan = 'rusak_berat';
+  } else if (detectedBoxes >= 3 || bestConf > 0.6) {
+    tipe = 'lubang';
+    kondisi_jalan = 'rusak_ringan';
+  } else {
+    tipe = 'lubang';
+    kondisi_jalan = 'sedang';
+  }
 
   return {
-    tipe: tipeOptions[Math.floor(Math.random() * tipeOptions.length)],
-    kondisi_jalan: kondisiOptions[Math.floor(Math.random() * kondisiOptions.length)],
+    tipe,
+    kondisi_jalan,
+    confidence: bestConf,
+    total_deteksi: detectedBoxes,
+    best_box: bestBox,
   };
 }
 
-// ─── detectImage ─────────────────────────────────────────────────────────────
-const detectImage = (req, res) => {
+// ─── detectImage ──────────────────────────────────────────────────────────────
+const detectImage = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  const id = uuidv4();
-  const filePath = req.file.path;
+  try {
+    const id = uuidv4();
+    const session = await sessionPromise;
 
-  // TODO: Panggil model AI nyata di sini
-  const result = runMockAIModel(filePath, 'image');
+    const tensor = await preprocessImage(req.file.path);
+    const results = await session.run({ images: tensor });
+    const outputData = Array.from(results.output0.data);
+    const { tipe, kondisi_jalan, confidence, total_deteksi, best_box } = interpretOutput(outputData);
 
-  // Simulasi output file (copy input ke outputs sebagai contoh)
-  const outputFileName = `result-${id}${path.extname(req.file.originalname)}`;
-  const outputPath = path.join(outputDir, outputFileName);
-  fs.copyFileSync(filePath, outputPath);
+    const outputFileName = `result-${id}.jpg`;
+    const outputPath = path.join(outputDir, outputFileName);
+    fs.copyFileSync(req.file.path, outputPath);
 
-  return res.status(200).json({
-    id,
-    status: 'success',
-    tipe: result.tipe,
-    kondisi_jalan: result.kondisi_jalan,
-    output_file: `/outputs/${outputFileName}`,
-  });
+    return res.status(200).json({
+      id,
+      status: 'success',
+      tipe,
+      kondisi_jalan,
+      confidence: Math.round(confidence * 100) / 100,
+      total_deteksi,
+      best_box,
+      output_file: `/outputs/${outputFileName}`,
+    });
+
+  } catch (err) {
+    console.error('Detection error:', err);
+    return res.status(500).json({ error: 'Model inference failed', detail: err.message });
+  }
 };
 
-// ─── detectVideo ─────────────────────────────────────────────────────────────
-const detectVideo = (req, res) => {
+// ─── detectVideo ──────────────────────────────────────────────────────────────
+const detectVideo = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  const id = uuidv4();
-  const filePath = req.file.path;
-
-  // TODO: Panggil model AI nyata di sini
-  const result = runMockAIModel(filePath, 'video');
-
-  const outputFileName = `result-${id}${path.extname(req.file.originalname)}`;
-  const outputPath = path.join(outputDir, outputFileName);
-  fs.copyFileSync(filePath, outputPath);
-
+  // TODO: Untuk video, perlu extract frame dulu pakai ffmpeg
+  // Sementara return info bahwa video diterima
   return res.status(200).json({
-    id,
-    status: 'success',
-    tipe: result.tipe,
-    kondisi_jalan: result.kondisi_jalan,
-    output_file: `/outputs/${outputFileName}`,
+    id: uuidv4(),
+    status: 'pending',
+    message: 'Video received. Frame extraction coming soon.',
+    output_file: null,
   });
 };
 

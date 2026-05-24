@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import WorkflowSection from './components/WorkflowSection';
 import FeaturesGrid from './components/FeaturesGrid';
 import ReportDashboard from './ReportDashboard';
 import type { DetectResult } from './services/detectService';
@@ -28,7 +27,6 @@ const App: React.FC = () => {
         <main className="space-y-20 mt-8">
           {/* Kirim onResult ke HeroSection */}
           <HeroSection onResult={setResult} />
-          <WorkflowSection />
           <FeaturesGrid />
         </main>
       </div>

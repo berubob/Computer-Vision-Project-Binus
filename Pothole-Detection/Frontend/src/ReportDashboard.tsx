@@ -1,54 +1,182 @@
 import React from 'react';
-import PCIChart from './components/PCIChart';
-import DefectTable from './components/DefectTable';
-
-// Interface untuk tipe data agar TypeScript-mu aman
-interface DefectSummary {
-  type: string;
-  count: number;
-  percentage: number;
-  color: string;
-}
+import type { DetectResult } from './services/detectService';
 
 interface Props {
-  result: {
-    id: string;
-    status: string;
-    tipe: string;
-    kondisi_jalan: string;
-    output_file: string;
-  };
+  result: DetectResult;
   onBack: () => void;
 }
 
-// Ubah signature component:
+// ─── Helper: kondisi → warna & label ─────────────────────────────────────────
+function getKondisiStyle(kondisi: string) {
+  switch (kondisi) {
+    case 'rusak_berat':
+      return { badge: 'bg-red-500/10 border-red-500/20 text-red-400', dot: 'bg-red-500', label: 'Rusak Berat' };
+    case 'rusak_ringan':
+      return { badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400', dot: 'bg-orange-500', label: 'Rusak Ringan' };
+    case 'sedang':
+      return { badge: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400', dot: 'bg-yellow-500', label: 'Sedang' };
+    default:
+      return { badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', dot: 'bg-emerald-500', label: 'Baik' };
+  }
+}
+
+function getTipeLabel(tipe: string) {
+  switch (tipe) {
+    case 'lubang': return 'Pothole / Lubang';
+    case 'retak': return 'Retak Permukaan';
+    default: return 'Permukaan Baik';
+  }
+}
+
+// ─── Helper: confidence → PCI score (0-100) ───────────────────────────────────
+function getPCIScore(kondisi: string, confidence: number) {
+  const base: Record<string, number> = {
+    baik: 85,
+    sedang: 65,
+    rusak_ringan: 45,
+    rusak_berat: 25,
+  };
+  const score = base[kondisi] ?? 50;
+  // Sedikit variasi berdasarkan confidence
+  return Math.min(100, Math.max(0, Math.round(score - (confidence * 10))));
+}
+
+function getPCILabel(score: number) {
+  if (score >= 85) return { label: 'Excellent', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' };
+  if (score >= 70) return { label: 'Good', color: 'text-blue-400', badge: 'bg-blue-500/10 border-blue-500/20 text-blue-400' };
+  if (score >= 55) return { label: 'Fair', color: 'text-yellow-400', badge: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' };
+  if (score >= 40) return { label: 'Sub-Optimal', color: 'text-orange-400', badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400' };
+  return { label: 'Critical', color: 'text-red-400', badge: 'bg-red-500/10 border-red-500/20 text-red-400' };
+}
+
+// ─── Bounding Box Canvas ──────────────────────────────────────────────────────
+interface BoxProps {
+  imageUrl: string;
+  box: DetectResult['best_box'];
+  kondisi: string;
+}
+
+const BoundingBoxCanvas: React.FC<BoxProps> = ({ imageUrl, box, kondisi }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const [loaded, setLoaded] = React.useState(false);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imageUrl;
+
+    img.onload = () => {
+      // Sesuaikan canvas dengan ukuran gambar
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+
+      // Gambar image
+      ctx.drawImage(img, 0, 0);
+
+      // Gambar bounding box kalau ada
+      if (box) {
+        const color = kondisi === 'rusak_berat' ? '#ef4444'
+          : kondisi === 'rusak_ringan' ? '#f97316'
+          : kondisi === 'sedang' ? '#eab308'
+          : '#22c55e';
+
+        // YOLO output: x,y = center, w,h = width/height (dalam pixel 640x640)
+        // Scale ke ukuran asli gambar
+        const scaleX = img.naturalWidth / 640;
+        const scaleY = img.naturalHeight / 640;
+
+        const x = (box.x - box.w / 2) * scaleX;
+        const y = (box.y - box.h / 2) * scaleY;
+        const w = box.w * scaleX;
+        const h = box.h * scaleY;
+
+        // Border box
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, w, h);
+
+        // Background label
+        const label = `Pothole ${Math.round(box.confidence * 100)}%`;
+        ctx.font = 'bold 16px monospace';
+        const textWidth = ctx.measureText(label).width;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y - 24, textWidth + 12, 24);
+
+        // Teks label
+        ctx.fillStyle = '#000000';
+        ctx.fillText(label, x + 6, y - 6);
+      }
+
+      setLoaded(true);
+    };
+  }, [imageUrl, box, kondisi]);
+
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden bg-[#0d111a] border border-gray-800">
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-auto"
+        style={{ display: loaded ? 'block' : 'none' }}
+      />
+    </div>
+  );
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
-  const defectData: DefectSummary[] = [
-    { type: 'Longitudinal Cracks', count: 7, percentage: 50, color: 'bg-amber-500' },
-    { type: 'Severe Potholes', count: 4, percentage: 28, color: 'bg-red-500' },
-    { type: 'Alligator Cracking', count: 2, percentage: 15, color: 'bg-orange-500' },
-    { type: 'Rutting/Deformation', count: 1, percentage: 7, color: 'bg-yellow-500' },
-  ];
+  const kondisiStyle = getKondisiStyle(result.kondisi_jalan);
+  const pciScore = getPCIScore(result.kondisi_jalan, result.confidence ?? 0);
+  const pciLabel = getPCILabel(pciScore);
+  const confidencePct = Math.round((result.confidence ?? 0) * 100);
+  const imageUrl = result.output_file ? `http://localhost:3000${result.output_file}` : null;
 
   return (
     <div className="min-h-screen bg-[#0d111a] text-white p-6 font-sans">
-      {/* Header Laporan */}
+
+      {/* ── Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6 mb-8 gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-amber-500 font-bold tracking-widest uppercase mb-1">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            Sector 7G-14 • Live Analysis Report
+            ID: {result.id.slice(0, 8)}... • Live Analysis Report
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight">Infrastructure Integrity Assessment</h1>
+
+          {/* Tags hasil deteksi */}
+          <div className="flex gap-2 mt-3 flex-wrap">
+            <span className={`px-3 py-1 border rounded-full text-xs font-semibold ${kondisiStyle.badge}`}>
+              <span className={`inline-block w-1.5 h-1.5 rounded-full ${kondisiStyle.dot} mr-1.5`}></span>
+              {kondisiStyle.label}
+            </span>
+            <span className="px-3 py-1 border border-amber-500/20 bg-amber-500/10 text-amber-400 rounded-full text-xs font-semibold">
+              {getTipeLabel(result.tipe)}
+            </span>
+            <span className="px-3 py-1 border border-gray-700 bg-gray-800/50 text-gray-400 rounded-full text-xs font-semibold">
+              Confidence: {confidencePct}%
+            </span>
+            {result.total_deteksi !== undefined && (
+              <span className="px-3 py-1 border border-gray-700 bg-gray-800/50 text-gray-400 rounded-full text-xs font-semibold">
+                {result.total_deteksi} Titik Terdeteksi
+              </span>
+            )}
+          </div>
         </div>
-        
+
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <button className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
             📁 Export PDF
-          </button>
-          <button className="bg-amber-500 hover:bg-amber-600 text-black text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
-            🔄 Recalibrate AI
           </button>
           <button
             onClick={onBack}
@@ -58,71 +186,127 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
         </div>
       </div>
 
-      {/* Grid Atas: Ringkasan & Grafik */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-        
-        {/* Card 1: Skor PCI (Highlight Utama) */}
-        <div className="lg:col-span-4 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Pavement Condition Index (PCI)</h3>
-            <div className="flex items-baseline gap-4">
-              <span className="text-7xl font-extrabold text-amber-500 tracking-tight">66%</span>
-              <span className="px-2.5 py-1 bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold rounded-md uppercase">
-                Sub-Optimal
-              </span>
-            </div>
+      {/* ── Grid Atas ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+
+        {/* Card PCI Score */}
+        <div className="lg:col-span-3 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Pavement Condition Index</h3>
+          <div className="flex items-baseline gap-3">
+            <span className={`text-7xl font-extrabold tracking-tight ${pciLabel.color}`}>{pciScore}</span>
+            <span className={`px-2.5 py-1 border text-xs font-bold rounded-md uppercase ${pciLabel.badge}`}>
+              {pciLabel.label}
+            </span>
           </div>
-          <div className="mt-6 border-t border-gray-800/60 pt-4">
+          <div className="mt-4 border-t border-gray-800/60 pt-4">
             <p className="text-gray-400 text-xs leading-relaxed">
-              Skor <strong className="text-white">66</strong> mengindikasikan bahwa degradasi struktural jalan telah melewati batas aman. Disarankan melakukan rekonstruksi permukaan dalam <span className="text-amber-500 font-semibold">14 hari</span> ke depan.
+              Kondisi jalan terdeteksi <strong className="text-white">{kondisiStyle.label}</strong> dengan
+              {' '}<span className="text-amber-500 font-semibold">{confidencePct}%</span> tingkat keyakinan model.
             </p>
           </div>
         </div>
 
-        {/* Card 2: Grafik Degradasi Tren */}
-        <div className="lg:col-span-8 bg-[#111723] border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Pavement Degradation Trend (12 Months)</h3>
-          <div className="h-44 w-full">
-            <PCIChart />
+        {/* Card Hasil Deteksi */}
+        <div className="lg:col-span-3 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">Hasil Deteksi</h3>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-xs">Tipe Kerusakan</span>
+              <span className="text-white text-xs font-semibold">{getTipeLabel(result.tipe)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-xs">Kondisi Jalan</span>
+              <span className={`text-xs font-semibold ${kondisiStyle.badge} px-2 py-0.5 rounded border`}>
+                {kondisiStyle.label}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 text-xs">Confidence</span>
+              <div className="flex items-center gap-2">
+                <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full"
+                    style={{ width: `${confidencePct}%` }}
+                  />
+                </div>
+                <span className="text-amber-400 text-xs font-semibold">{confidencePct}%</span>
+              </div>
+            </div>
+            {result.total_deteksi !== undefined && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 text-xs">Total Deteksi</span>
+                <span className="text-white text-xs font-semibold">{result.total_deteksi} titik</span>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Card Gambar Output */}
+        <div className="lg:col-span-6 bg-[#111723] border border-gray-800 rounded-2xl p-6">
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Output Visual</h3>
+          {imageUrl ? (
+            <BoundingBoxCanvas
+              imageUrl={imageUrl}
+              box={result.best_box}
+              kondisi={result.kondisi_jalan}
+            />
+          ) : (
+            <div className="w-full h-44 rounded-xl bg-[#0d111a] border border-gray-800 flex items-center justify-center">
+              <span className="text-gray-600 text-xs">Tidak ada output visual</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Grid Bawah: Bar Chart Distribusi Kerusakan & Tabel Detil */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Kiri: Distribusi Tipe Kerusakan */}
-        <div className="lg:col-span-5 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Damage Categorization Distribution</h3>
-            <p className="text-gray-500 text-xs mb-6">Total terdeteksi: 14 Titik Kerusakan</p>
-            
-            {/* Custom Tailwind Bar Chart */}
-            <div className="space-y-4">
-              {defectData.map((item, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-gray-300">{item.type}</span>
-                    <span className="text-gray-400 font-semibold">{item.count} Unit ({item.percentage}%)</span>
-                  </div>
-                  <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                      style={{ width: `${item.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+      {/* ── Grid Bawah ── */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-2xl bg-[#111723] border border-gray-800 rounded-2xl p-6">
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Damage Distribution</h3>
+          <p className="text-gray-500 text-xs mb-6">
+            Berdasarkan hasil deteksi: {result.total_deteksi ?? 0} titik kerusakan
+          </p>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-gray-300">{getTipeLabel(result.tipe)}</span>
+                <span className="text-gray-400 font-semibold">{confidencePct}%</span>
+              </div>
+              <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500 rounded-full transition-all duration-700" style={{ width: `${confidencePct}%` }} />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-gray-300">Kondisi {kondisiStyle.label}</span>
+                <span className="text-gray-400 font-semibold">{100 - pciScore}% degradasi</span>
+              </div>
+              <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-700 ${kondisiStyle.dot}`} style={{ width: `${100 - pciScore}%` }} />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-gray-300">PCI Score</span>
+                <span className="text-gray-400 font-semibold">{pciScore}/100</span>
+              </div>
+              <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: `${pciScore}%` }} />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Kanan: Tabel Rincian Data */}
-        <div className="lg:col-span-7 bg-[#111723] border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Quantified Structural Metrics</h3>
-          <DefectTable />
+          <p className="text-[11px] text-amber-500/80 bg-amber-500/5 border border-amber-500/10 p-3 rounded-xl mt-6">
+            💡 <strong>Analisis AI:</strong> Terdeteksi {result.tipe === 'lubang'
+              ? 'kerusakan tipe lubang (pothole)'
+              : result.tipe === 'retak'
+              ? 'retak pada permukaan jalan'
+              : 'permukaan jalan dalam kondisi baik'} dengan keyakinan {confidencePct}%.
+          </p>
         </div>
-
       </div>
     </div>
   );

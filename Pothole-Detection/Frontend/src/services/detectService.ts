@@ -5,6 +5,15 @@ export interface DetectResult {
   status: string;
   tipe: string;
   kondisi_jalan: string;
+  confidence: number;        // ← tambah
+  total_deteksi: number;     // ← tambah
+  best_box: {                // ← tambah
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    confidence: number;
+  } | null;
   output_file: string;
 }
 
