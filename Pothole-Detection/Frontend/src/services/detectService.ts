@@ -5,14 +5,13 @@ export interface DetectResult {
   status: string;
   tipe: string;
   kondisi_jalan: string;
-  confidence: number;        // ← tambah
-  total_deteksi: number;     // ← tambah
-  best_box: {                // ← tambah
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    confidence: number;
+  road_status: string;       // ← GOOD / WARNING / SERIOUS / CRITICAL
+  rhi: number;               // ← Road Health Index
+  mps: number;               // ← Max Pothole Score
+  potholes_detected: number; // ← ganti dari total_deteksi
+  confidence: number;
+  best_box: {
+    x: number; y: number; w: number; h: number; confidence: number;
   } | null;
   output_file: string;
 }

@@ -29,7 +29,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
   const handleFileSelect = (file: File) => {
     const allowed = ['image/jpeg', 'image/png', 'video/mp4', 'video/avi'];
     if (!allowed.includes(file.type)) {
-      setError('Format tidak didukung. Gunakan JPG, PNG, MP4, atau AVI.');
+      setError('Unsupported format. Use JPG, PNG, MP4, or AVI.');
       return;
     }
     setError(null);
@@ -50,7 +50,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
 
       onResult(result); // kirim ke App.tsx → pindah ke ReportDashboard
     } catch (err) {
-      setError('Gagal menghubungi server. Pastikan backend berjalan.');
+      setError('Failed to contact server. Make sure the backend is running.');
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +58,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-8">
-      {/* Left Info Text — tidak berubah */}
+      {/* Left Info Text */}
       <div className="lg:col-span-5 space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-semibold rounded-full uppercase tracking-wider">
           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></span>
@@ -101,7 +101,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
             </svg>
           </div>
 
-          {/* File terpilih */}
+          {/* Selected file */}
           {selectedFile ? (
             <div className="mb-4 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
               <p className="text-amber-400 text-sm font-semibold">📎 {selectedFile.name}</p>
@@ -111,7 +111,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
             <>
               <h3 className="text-lg font-bold">Upload Visual Data</h3>
               <p className="text-gray-400 text-xs max-w-sm mt-2 leading-relaxed">
-                Drag and drop file atau klik Browse Files.
+                Drag and drop file or click Browse Files.
               </p>
             </>
           )}
@@ -134,7 +134,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full max-w-md justify-center">
-            <button
+              <button
               onClick={() => fileInputRef.current?.click()}
               className="bg-amber-500 hover:bg-amber-600 text-black text-sm font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10"
             >
@@ -160,7 +160,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
             )}
           </div>
 
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-8 text-[11px] text-gray-500">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-8 text-[11px] text-gray-500">
             <span>📁 MP4, AVI</span>
             <span>🖼️ JPG, PNG</span>
             <span>⚖️ Max 100MB</span>
