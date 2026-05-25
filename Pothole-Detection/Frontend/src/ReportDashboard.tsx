@@ -23,19 +23,19 @@ function getRoadStatusStyle(status: string) {
 
 function getMaintenanceDesc(status: string) {
   switch (status) {
-    case 'CRITICAL': return 'Diperlukan rekonstruksi segera dalam 7 hari.';
-    case 'SERIOUS':  return 'Jadwalkan penambalan dan perbaikan dalam 30 hari.';
-    case 'WARNING':  return 'Disarankan pemeliharaan preventif dalam 90 hari.';
-    default:         return 'Tidak diperlukan tindakan. Inspeksi rutin dalam 6 bulan.';
+    case 'CRITICAL': return 'Immediate reconstruction required within 7 days.';
+    case 'SERIOUS':  return 'Schedule patching and repair within 30 days.';
+    case 'WARNING':  return 'Preventive maintenance recommended within 90 days.';
+    default:         return 'No action needed. Routine inspection in 6 months.';
   }
 }
 
 function getMaintenancePriority(status: string) {
   switch (status) {
-    case 'CRITICAL': return 'Prioritas Kritis';
-    case 'SERIOUS':  return 'Prioritas Tinggi';
-    case 'WARNING':  return 'Prioritas Sedang';
-    default:         return 'Prioritas Rendah';
+    case 'CRITICAL': return 'Critical Priority';
+    case 'SERIOUS':  return 'High Priority';
+    case 'WARNING':  return 'Medium Priority';
+    default:         return 'Low Priority';
   }
 }
 
@@ -44,11 +44,11 @@ function getPCIScore(rhi: number) {
 }
 
 function getPCILabel(score: number) {
-  if (score >= 85) return { label: 'Sangat Baik', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' };
-  if (score >= 70) return { label: 'Baik', color: 'text-blue-400', badge: 'bg-blue-500/10 border-blue-500/20 text-blue-400' };
-  if (score >= 55) return { label: 'Cukup', color: 'text-yellow-400', badge: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' };
-  if (score >= 40) return { label: 'Kurang Optimal', color: 'text-orange-400', badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400' };
-  return { label: 'Kritis', color: 'text-red-400', badge: 'bg-red-500/10 border-red-500/20 text-red-400' };
+  if (score >= 85) return { label: 'Excellent', color: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' };
+  if (score >= 70) return { label: 'Good', color: 'text-blue-400', badge: 'bg-blue-500/10 border-blue-500/20 text-blue-400' };
+  if (score >= 55) return { label: 'Fair', color: 'text-yellow-400', badge: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' };
+  if (score >= 40) return { label: 'Sub-Optimal', color: 'text-orange-400', badge: 'bg-orange-500/10 border-orange-500/20 text-orange-400' };
+  return { label: 'Critical', color: 'text-red-400', badge: 'bg-red-500/10 border-red-500/20 text-red-400' };
 }
 
 // ─── Bounding Box Canvas ──────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ const BoundingBoxCanvas: React.FC<BoxProps> = ({ imageUrl, box, road_status }) =
         ctx.lineWidth = 3;
         ctx.strokeRect(x, y, w, h);
 
-        const label = `Lubang ${Math.round(box.confidence * 100)}%`;
+        const label = `Pothole ${Math.round(box.confidence * 100)}%`;
         ctx.font = 'bold 16px monospace';
         const textWidth = ctx.measureText(label).width;
         ctx.fillStyle = color;
@@ -152,9 +152,9 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
         <div>
           <div className="flex items-center gap-2 text-xs text-amber-500 font-bold tracking-widest uppercase mb-1">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-            ID: {result.id.slice(0, 8)}... • Laporan Analisis Langsung
+            ID: {result.id.slice(0, 8)}... • Live Analysis Report
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Penilaian Integritas Infrastruktur</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Infrastructure Integrity Assessment</h1>
           <div className="flex gap-2 mt-3 flex-wrap">
             <span className={`px-3 py-1 border rounded-full text-xs font-semibold ${statusStyle.badge}`}>
               {statusStyle.icon} {result.road_status}
@@ -162,20 +162,17 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
             <span className="px-3 py-1 border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-semibold">
               RHI: {result.rhi}%
             </span>
-            <span className="px-3 py-1 border border-amber-500/20 bg-amber-500/10 text-amber-400 rounded-full text-xs font-semibold">
-              MPS: {result.mps}/100
-            </span>
             <span className="px-3 py-1 border border-gray-700 bg-gray-800/50 text-gray-400 rounded-full text-xs font-semibold">
-              {result.potholes_detected} Lubang Terdeteksi
+              {result.potholes_detected} Potholes Detected
             </span>
           </div>
         </div>
         <div className="flex gap-3 flex-wrap">
           <button onClick={handleExportPDF} className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
-            📁 Ekspor PDF
+            📁 Export PDF
           </button>
           <button onClick={onBack} className="bg-[#1a2333] hover:bg-[#222e44] border border-gray-700 text-sm font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2 text-gray-300">
-            ← Kembali
+            ← Back
           </button>
         </div>
       </div>
@@ -185,7 +182,7 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
 
         {/* Card RHI */}
         <div className="lg:col-span-3 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col justify-between">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Indeks Kesehatan Jalan</h3>
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Road Health Index</h3>
           <div className="flex items-baseline gap-3">
             <span className={`text-7xl font-extrabold tracking-tight ${pciLabel.color}`}>{pciScore}</span>
             <span className={`px-2.5 py-1 border text-xs font-bold rounded-md uppercase ${pciLabel.badge}`}>
@@ -194,22 +191,22 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
           </div>
           <div className="mt-4 border-t border-gray-800/60 pt-4">
             <p className="text-gray-400 text-xs leading-relaxed">
-              Kesehatan jalan berada pada <span className="text-amber-500 font-semibold">{result.rhi}%</span> dengan skor lubang maksimal sebesar <span className="text-amber-500 font-semibold">{result.mps}/100</span>.
+              Road health is at <span className="text-amber-500 font-semibold">{result.rhi}%</span> with a max pothole score of <span className="text-amber-500 font-semibold">{result.mps}/100</span>.
             </p>
           </div>
         </div>
 
         {/* Card Detection Result + Maintenance Priority */}
         <div className="lg:col-span-3 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">Hasil Deteksi</h3>
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider">Detection Result</h3>
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-500 text-xs">Lubang Terdeteksi</span>
+              <span className="text-gray-500 text-xs">Potholes Detected</span>
               <span className="text-white text-xs font-semibold">{result.potholes_detected ?? 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500 text-xs">Indeks Kesehatan Jalan</span>
+              <span className="text-gray-500 text-xs">Road Health Index</span>
               <div className="flex items-center gap-2">
                 <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${result.rhi}%` }} />
@@ -218,11 +215,7 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
               </div>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500 text-xs">Skor Lubang Maksimal</span>
-              <span className="text-amber-400 text-xs font-semibold">{result.mps}/100</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 text-xs">Tingkat Kepercayaan</span>
+              <span className="text-gray-500 text-xs">Confidence</span>
               <div className="flex items-center gap-2">
                 <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full" style={{ width: `${confidencePct}%` }} />
@@ -235,7 +228,7 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
           <div className="border-t border-gray-800" />
 
           <div className="flex flex-col gap-2">
-            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Prioritas Perawatan</p>
+            <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Maintenance Priority</p>
             <div className={`flex items-start gap-3 p-3 rounded-lg bg-[#0d111a] border-l-2 ${statusStyle.border}`}>
               <span className="text-base">{statusStyle.icon}</span>
               <div>
@@ -252,8 +245,8 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
               <div className="flex items-start gap-3 p-3 rounded-lg bg-[#0d111a] border-l-2 border-l-blue-500">
                 <span className="text-base">🔍</span>
                 <div>
-                  <p className="text-xs font-bold text-blue-400">Verifikasi</p>
-                  <p className="text-gray-500 text-[11px] leading-relaxed mt-0.5">Kepercayaan rendah. Inspeksi manual direkomendasikan.</p>
+                  <p className="text-xs font-bold text-blue-400">Verify</p>
+                  <p className="text-gray-500 text-[11px] leading-relaxed mt-0.5">Low confidence. Manual inspection recommended.</p>
                 </div>
               </div>
             )}
@@ -262,12 +255,12 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
 
         {/* Card Output Visual */}
         <div className="lg:col-span-6 bg-[#111723] border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Visual Hasil</h3>
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4">Output Visual</h3>
           {imageUrl ? (
             <BoundingBoxCanvas imageUrl={imageUrl} box={result.best_box} road_status={result.road_status} />
           ) : (
             <div className="w-full h-44 rounded-xl bg-[#0d111a] border border-gray-800 flex items-center justify-center">
-              <span className="text-gray-600 text-xs">Tidak ada hasil visual</span>
+              <span className="text-gray-600 text-xs">No visual output</span>
             </div>
           )}
         </div>
@@ -276,9 +269,9 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
       {/* ── Grid Bawah ── */}
       <div className="flex justify-center">
         <div className="w-full max-w-2xl bg-[#111723] border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Distribusi Kerusakan</h3>
+          <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Damage Distribution</h3>
           <p className="text-gray-500 text-xs mb-6">
-            Berdasarkan hasil deteksi: {result.potholes_detected ?? 0} lubang ditemukan
+            Based on detection results: {result.potholes_detected ?? 0} potholes found
           </p>
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -292,20 +285,11 @@ const ReportDashboard: React.FC<Props> = ({ result, onBack }) => {
             </div>
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs font-medium">
-                <span className="text-gray-300">Skor Lubang Maksimal (MPS)</span>
-                <span className="text-gray-400 font-semibold">{result.mps}/100</span>
-              </div>
-              <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
-                <div className="h-full bg-amber-500 rounded-full transition-all duration-700" style={{ width: `${result.mps}%` }} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-medium">
                 <span className="text-gray-300">Confidence</span>
                 <span className="text-gray-400 font-semibold">{confidencePct}%</span>
               </div>
               <div className="w-full h-3 bg-[#1a2233] rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full transition-all duration-700" style={{ width: `${confidencePct}%` }} />
+                <div className="h-full bg-amber-500 rounded-full transition-all duration-700" style={{ width: `${confidencePct}%` }} />
               </div>
             </div>
           </div>

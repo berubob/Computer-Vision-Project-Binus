@@ -73,7 +73,7 @@ const HeroSection: React.FC<Props> = ({ onResult }) => {
         </p>
         <div className="flex gap-4 pt-2 justify-center">
           <div className="bg-[#121824] border border-gray-800 p-4 rounded-xl w-28 text-center">
-            <div className="text-2xl font-bold text-amber-500">84.38%</div>
+            <div className="text-2xl font-bold text-amber-500">77.21%</div>
             <div className="text-[10px] text-gray-500 uppercase font-semibold mt-1">Accuracy</div>
           </div>
           <div className="bg-[#121824] border border-gray-800 p-4 rounded-xl w-28 text-center">
