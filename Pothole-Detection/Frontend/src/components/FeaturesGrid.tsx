@@ -4,7 +4,7 @@ const FeaturesGrid: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* Card Utama — Cara Kerja AI */}
+      {/* Main Card — How AI Works */}
       <div className="lg:col-span-7 bg-[#111723] border border-gray-800 rounded-2xl p-6 flex flex-col justify-between overflow-hidden relative group min-h-[380px]">
         <div className="space-y-3 z-10">
           <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
@@ -12,7 +12,7 @@ const FeaturesGrid: React.FC = () => {
           </span>
           <h3 className="text-xl font-bold">AI-Powered Pothole Detection</h3>
           <p className="text-gray-400 text-xs leading-relaxed">
-            Model YOLOv8 kami dilatih khusus untuk mendeteksi kerusakan jalan dari gambar atau video dengan akurasi tinggi dan waktu inferensi yang cepat.
+            Our YOLOv8 model is trained to detect road defects from images or video with high accuracy and fast inference times.
           </p>
         </div>
 
@@ -22,10 +22,10 @@ const FeaturesGrid: React.FC = () => {
 
           <div className="relative z-10 flex items-center justify-between w-full max-w-md">
             {[
-              { icon: '🖼️', label: 'Input Gambar' },
+              { icon: '🖼️', label: 'Image Input' },
               { icon: '⚙️', label: 'YOLOv8 Model' },
               { icon: '📦', label: 'Bounding Box' },
-              { icon: '📊', label: 'Laporan' },
+              { icon: '📊', label: 'Report' },
             ].map((step, idx, arr) => (
               <React.Fragment key={idx}>
                 <div className="flex flex-col items-center gap-2">
@@ -43,7 +43,7 @@ const FeaturesGrid: React.FC = () => {
         </div>
       </div>
 
-      {/* Kolom Kanan */}
+      {/* Right Column */}
       <div className="lg:col-span-5 flex flex-col gap-6">
 
         {/* Format yang Didukung */}
@@ -54,9 +54,9 @@ const FeaturesGrid: React.FC = () => {
             </svg>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-sm">Format yang Didukung</h4>
+            <h4 className="font-bold text-sm">Supported Formats</h4>
             <p className="text-gray-400 text-xs leading-relaxed">
-              Upload gambar <span className="text-amber-400 font-semibold">JPG / PNG</span> atau video <span className="text-amber-400 font-semibold">MP4 / AVI</span> hingga 100MB untuk dianalisis.
+              Upload images <span className="text-amber-400 font-semibold">JPG / PNG</span> or videos <span className="text-amber-400 font-semibold">MP4 / AVI</span> up to 100MB for analysis.
             </p>
           </div>
         </div>
@@ -71,9 +71,9 @@ const FeaturesGrid: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h5 className="font-bold text-xs">Laporan Otomatis</h5>
+            <h5 className="font-bold text-xs">Automated Reporting</h5>
             <p className="text-gray-500 text-[11px] leading-normal">
-              Hasil deteksi langsung ditampilkan dalam dashboard lengkap dengan skor PCI.
+              Detection results are displayed in a complete dashboard with PCI scoring.
             </p>
           </div>
 
@@ -84,9 +84,9 @@ const FeaturesGrid: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
               </svg>
             </div>
-            <h5 className="font-bold text-xs">Visualisasi Bounding Box</h5>
+            <h5 className="font-bold text-xs">Bounding Box Visualization</h5>
             <p className="text-gray-500 text-[11px] leading-normal">
-              Setiap kerusakan ditandai langsung pada gambar dengan kotak deteksi.
+              Each defect is annotated directly on the image with detection boxes.
             </p>
           </div>
 

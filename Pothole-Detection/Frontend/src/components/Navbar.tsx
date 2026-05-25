@@ -13,7 +13,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Navigation Links */}
-      <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+      {/* <div className="hidden md:flex items-center gap-8 text-sm font-medium">
         {navItems.map((item) => (
           <a
             key={item}
@@ -27,7 +27,7 @@ const Navbar: React.FC = () => {
             {item}
           </a>
         ))}
-      </div>
+      </div> */}
 
       {/* Right Icons */}
       <div className="flex items-center gap-4">

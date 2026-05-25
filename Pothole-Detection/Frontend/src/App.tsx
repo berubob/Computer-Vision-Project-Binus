@@ -8,12 +8,12 @@ import type { DetectResult } from './services/detectService';
 const App: React.FC = () => {
   const [result, setResult] = useState<DetectResult | null>(null);
 
-  // Kalau sudah ada result, tampilkan ReportDashboard
+  // If there's a result, show ReportDashboard
   if (result) {
     return (
       <ReportDashboard
         result={result}
-        onBack={() => setResult(null)}  // tombol kembali
+        onBack={() => setResult(null)}  // back button
       />
     );
   }
@@ -25,7 +25,7 @@ const App: React.FC = () => {
       <div className="relative z-10 w-full min-h-screen px-6 sm:px-8 lg:px-10 xl:px-16 pb-16">
         <Navbar />
         <main className="space-y-20 mt-8">
-          {/* Kirim onResult ke HeroSection */}
+          {/* Pass onResult to HeroSection */}
           <HeroSection onResult={setResult} />
           <FeaturesGrid />
         </main>
